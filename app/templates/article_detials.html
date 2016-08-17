@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div>
+        {% include '_article_info.html' %}
+        <hr>
+        <div>
+            <p>
+                {{ article.content }}
+            </p>
+        </div>
+        <hr>
+        <h4>评论</h4>
+        {% include "_article_comment.html" %}
+    </div>
+{% endblock %}
