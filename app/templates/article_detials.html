@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+{% import '_macros.html' as macros %}
 
 {% block content %}
     <div>
@@ -6,11 +8,31 @@
         <hr>
         <div>
             <p>
-                {{ article.content }}
+                {{ article.content | safe }}
             </p>
         </div>
         <hr>
-        <h4>评论</h4>
+        <h4 id="comments">评论</h4>
         {% include "_article_comment.html" %}
+        <div class="pagination">
+            {{ macros.pagination_widget(pagination, endpoint, id=id, fragment='#comments') }}
+        </div>
+        <h4>发表评论</h4>
+        <div class="row comment-submit">
+            <div class="col-md-8">
+                {{ wtf.quick_form(form) }}
+            </div>
+        </div>
     </div>
+{% endblock %}
+
+{% block stylesheet %}
+    {{ super() }}
+    <link href="{{ url_for('static', filename='css/prism.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block script %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='tinymce/js/tinymce/extentsion_self/codesimple_extentsion/prism.js') }}">
+    </script>
 {% endblock %}

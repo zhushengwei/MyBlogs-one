@@ -1,15 +1,43 @@
 #coding: utf-8
 from datetime import datetime
+import hashlib
 from . import db
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask.ext.login import UserMixin
+from . import db, login_manager
 
 
-article_types = {u'开发语言': ['Python', 'C'],
-                 u'摄影': [u'前期', u'后期', u'基础'],
-                 u'数据库': ['MySQL'],
+article_types = {'Python': ['pygam', u'爬虫'],
+                 u'摄影': [u'基础', u'前期', u'后期'],
                  u'阅读': [u'读后感', u'求推荐'],
-                 u'Web开发': ['Flask', 'Django']
-                 }
+                 u'C语言': [u'基础', u'项目'],
+                 u'Web开发': ['Flask','Django']}
 
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(64), unique=True, index=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    password_hash = db.Column(db.String(128))
+
+    @property
+    def password(self):
+        raise ArithmeticError('password is not a readable attribute')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return '<uername %r>' % self.usernaem
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 class ArticleType(db.Model):
     __tablename__ = 'articleTypes'
@@ -61,7 +89,26 @@ class Comment(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     author_name = db.Column(db.String(64))
     author_email = db.Column(db.String(64))
+    avatar_hash = db.Column(db.String(32))
     article_id = db.Column(db.Integer, db.ForeignKey('articles.id'))
+
+    def __init__(self, **kwargs):
+        super(Comment, self).__init__(**kwargs)
+        if self.author_email is not None and self.avatar_hash is None:
+            self.avatar_hash = hashlib.md5(
+                    self.author_email.encode('utf-8')).hexdigest()
+
+    # 头像
+    def gravatar(self, size=40, default='identicon', rating='g'):
+        # if request.is_secure:
+        #     url = 'https://secure.gravatar.com/avatar'
+        # else:
+        #     url = 'http://www.gravatar.com/avatar'
+        url = 'http://gravatar.duoshuo.com/avatar'
+        hash = self.avatar_hash or hashlib.md5(
+            self.author_email.encode('utf-8')).hexdigest()
+        return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
+            url=url, hash=hash, size=size, default=default, rating=rating)
 
     @staticmethod
     def generate_fake(count=100):
@@ -85,7 +132,7 @@ class Comment(db.Model):
 class Article(db.Model):
     __tablename__ = 'articles'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(64))
+    title = db.Column(db.String(64), unique=True)
     content = db.Column(db.Text)
     summary = db.Column(db.Text)
     create_time = db.Column(db.DateTime, index=True, default=datetime.utcnow)
@@ -111,7 +158,7 @@ class Article(db.Model):
                         content=forgery_py.lorem_ipsum.sentences(randint(15, 35)),
                         summary=forgery_py.lorem_ipsum.sentences(randint(2, 5)),
                         num_of_view=randint(100, 15000),
-                        articleType=aT,source=s)
+                        articleType=aT, source=s)
             db.session.add(a)
             try:
                 db.session.commit()

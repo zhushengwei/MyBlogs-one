@@ -1,11 +1,25 @@
-<ul class="comments">
-    {% for comment in article.comments %}
+<ul class="comments" >
+    {% if comments %}
+        {% for comment in comments %}
         <li class="comment">
+            <div class="comment-thumbnail">
+                <img class="img-rounded profile-thumbnail" src="{{ comment.gravatar() }}">
+            </div>
             <div class="comment-info">
-            <div class="comment-date"><span>{{ comment.timestamp }}</span></div>
-            <div class="comment-author"><span>{{ comment.author_name }}</span></div>
-            <div class="comment-content">{{ comment.content }}</div>
+                <div class="comment-date"><span>{{ comment.timestamp.replace(microsecond=0) }}</span></div>
+                <div class="comment-author">
+                    <span>{{ comment.author_name }}</span>
+                    {% if comment.author_email == '2212204560@qq.com' %}
+                        <span class="label label-danger">管理员认证</span>
+                    {% endif %}
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
             </div>
         </li>
-    {% endfor %}
+        {% endfor %}
+    {% else %}
+        <li class="comment">
+            <div class="comment-content">暂无评论</div>
+        </li>
+    {% endif %}
 </ul>
